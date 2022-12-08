@@ -1,0 +1,313 @@
+.env file
+DB_CONNECTION=mysql
+DB_HOST=127.0.0.1
+DB_PORT=3306
+DB_DATABASE=laravel
+DB_USERNAME=root
+DB_PASSWORD=
+
+database\migrations\_create_students_table.php
+php artisan make:migration create_students_table
+
+<?php
+ 
+use Illuminate\Database\Migrations\Migration;
+use Illuminate\Database\Schema\Blueprint;
+use Illuminate\Support\Facades\Schema;
+ 
+return new class extends Migration
+{
+    /**
+     * Run the migrations.
+     *
+     * @return void
+     */
+    public function up()
+    {
+        Schema::create('students', function (Blueprint $table) {
+            $table->id();
+            $table->string("name");
+            $table->string("address");
+            $table->string("mobile");
+            $table->timestamps();
+        });
+    }
+ 
+    /**
+     * Reverse the migrations.
+     *
+     * @return void
+     */
+    public function down()
+    {
+        Schema::dropIfExists('students');
+    }
+};
+
+php artisan make:controller StudentController --resource
+
+<?php
+ 
+namespace App\Http\Controllers;
+ 
+use Illuminate\Http\Request;
+use App\Models\Student; //add Student Model - Data is coming from the database via Model.
+ 
+class StudentController extends Controller
+{
+    /**
+     * Display a listing of the resource.
+     *
+     * @return \Illuminate\Http\Response
+     */
+    public function index()
+    {
+        $students = Student::all();
+        return view ('students.index')->with('students', $students);
+    }
+ 
+    /**
+     * Show the form for creating a new resource.
+     *
+     * @return \Illuminate\Http\Response
+     */
+    public function create()
+    {
+        return view('students.create');
+    }
+ 
+    /**
+     * Store a newly created resource in storage.
+     *
+     * @param  \Illuminate\Http\Request  $request
+     * @return \Illuminate\Http\Response
+     */
+    public function store(Request $request)
+    {
+        $input = $request->all();
+        Student::create($input);
+        return redirect('student')->with('flash_message', 'Student Addedd!');  
+    }
+ 
+    /**
+     * Display the specified resource.
+     *
+     * @param  int  $id
+     * @return \Illuminate\Http\Response
+     */
+    public function show($id)
+    {
+        $student = Student::find($id);
+        return view('students.show')->with('students', $student);
+    }
+ 
+    /**
+     * Show the form for editing the specified resource.
+     *
+     * @param  int  $id
+     * @return \Illuminate\Http\Response
+     */
+    public function edit($id)
+    {
+        $student = Student::find($id);
+        return view('students.edit')->with('students', $student);
+    }
+ 
+    /**
+     * Update the specified resource in storage.
+     *
+     * @param  \Illuminate\Http\Request  $request
+     * @param  int  $id
+     * @return \Illuminate\Http\Response
+     */
+    public function update(Request $request, $id)
+    {
+        $student = Student::find($id);
+        $input = $request->all();
+        $student->update($input);
+        return redirect('student')->with('flash_message', 'student Updated!');  
+    }
+ 
+    /**
+     * Remove the specified resource from storage.
+     *
+     * @param  int  $id
+     * @return \Illuminate\Http\Response
+     */
+    public function destroy($id)
+    {
+        Student::destroy($id);
+        return redirect('student')->with('flash_message', 'Student deleted!');  
+    }
+}
+
+php artisan make:model Student
+<?php
+ 
+namespace App\Models;
+ 
+use Illuminate\Database\Eloquent\Factories\HasFactory;
+use Illuminate\Database\Eloquent\Model;
+ 
+class Student extends Model
+{
+    use HasFactory;
+    protected $table = 'students';
+    protected $primaryKey = 'id';
+    protected $fillable = ['name', 'address', 'mobile'];
+}
+
+resources\views\students\layout.blade.php
+
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Student Laravel 9 CRUD</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/css/bootstrap.min.css" rel="stylesheet" integrity="sha384-1BmE4kWBq78iYhFldvKuhfTAU6auU8tT94WrHftjDbrCEXSU1oBoqyl2QvZ6jIW3" crossorigin="anonymous">
+</head>
+<body>
+   
+<div class="container">
+    @yield('content')
+</div>
+   
+</body>
+</html>
+
+index.blade.php
+@extends('students.layout')
+@section('content')
+    <div class="container">
+        <div class="row" style="margin:20px;">
+            <div class="col-12">
+                <div class="card">
+                    <div class="card-header">
+                        <h2>Laravel 9 CRUD (Create, Read, Update and Delete)</h2>
+                    </div>
+                    <div class="card-body">
+                        <a href="{{ url('/student/create') }}" class="btn btn-success btn-sm" title="Add New Student">
+                            Add New
+                        </a>
+                        <br/>
+                        <br/>
+                        <div class="table-responsive">
+                            <table class="table">
+                                <thead>
+                                    <tr>
+                                        <th>#</th>
+                                        <th>Name</th>
+                                        <th>Address</th>
+                                        <th>Mobile</th>
+                                        <th>Actions</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                @foreach($students as $item)
+                                    <tr>
+                                        <td>{{ $loop->iteration }}</td>
+                                        <td>{{ $item->name }}</td>
+                                        <td>{{ $item->address }}</td>
+                                        <td>{{ $item->mobile }}</td>
+  
+                                        <td>
+                                            <a href="{{ url('/student/' . $item->id) }}" title="View Student"><button class="btn btn-info btn-sm"><i class="fa fa-eye" aria-hidden="true"></i> View</button></a>
+                                            <a href="{{ url('/student/' . $item->id . '/edit') }}" title="Edit Student"><button class="btn btn-primary btn-sm"><i class="fa fa-pencil-square-o" aria-hidden="true"></i> Edit</button></a>
+  
+                                            <form method="POST" action="{{ url('/student' . '/' . $item->id) }}" accept-charset="UTF-8" style="display:inline">
+                                                {{ method_field('DELETE') }}
+                                                {{ csrf_field() }}
+                                                <button type="submit" class="btn btn-danger btn-sm" title="Delete Student" onclick="return confirm("Confirm delete?")"><i class="fa fa-trash-o" aria-hidden="true"></i> Delete</button>
+                                            </form>
+                                        </td>
+                                    </tr>
+                                @endforeach
+                                </tbody>
+                            </table>
+                        </div>
+  
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+@endsection
+
+create.blade.php
+
+@extends('students.layout')
+@section('content')
+  
+<div class="card" style="margin:20px;">
+  <div class="card-header">Create New Students</div>
+  <div class="card-body">
+       
+      <form action="{{ url('student') }}" method="post">
+        {!! csrf_field() !!}
+        <label>Name</label></br>
+        <input type="text" name="name" id="name" class="form-control"></br>
+        <label>Address</label></br>
+        <input type="text" name="address" id="address" class="form-control"></br>
+        <label>Mobile</label></br>
+        <input type="text" name="mobile" id="mobile" class="form-control"></br>
+        <input type="submit" value="Save" class="btn btn-success"></br>
+    </form>
+    
+  </div>
+</div>
+  
+@stop
+
+edit.blade.php
+
+@extends('students.layout')
+@section('content')
+  
+<div class="card" style="margin:20px;">
+  <div class="card-header">Edit Student</div>
+  <div class="card-body">
+       
+      <form action="{{ url('student/' .$students->id) }}" method="post">
+        {!! csrf_field() !!}
+        @method("PATCH")
+        <input type="hidden" name="id" id="id" value="{{$students->id}}" id="id" />
+        <label>Name</label></br>
+        <input type="text" name="name" id="name" value="{{$students->name}}" class="form-control"></br>
+        <label>Address</label></br>
+        <input type="text" name="address" id="address" value="{{$students->address}}" class="form-control"></br>
+        <label>Mobile</label></br>
+        <input type="text" name="mobile" id="mobile" value="{{$students->mobile}}" class="form-control"></br>
+        <input type="submit" value="Update" class="btn btn-success"></br>
+    </form>
+    
+  </div>
+</div>
+  
+@stop
+
+show.blade.php
+
+@extends('students.layout')
+@section('content')
+  
+<div class="card" style="margin:20px;">
+  <div class="card-header">Students Page</div>
+  <div class="card-body">
+        <div class="card-body">
+        <h5 class="card-title">Name : {{ $students->name }}</h5>
+        <p class="card-text">Address : {{ $students->address }}</p>
+        <p class="card-text">Mobile : {{ $students->mobile }}</p>
+  </div>
+    </hr>
+  </div>
+</div>
+
+routes\web.php
+
+use Illuminate\Support\Facades\Route;
+use App\Http\Controllers\StudentController; //add the ControllerNameSpace
+ 
+Route::get('/', function () {
+    return view('welcome');
+});
+ 
+Route::resource("/student", StudentController::class);
